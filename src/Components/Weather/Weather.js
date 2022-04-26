@@ -6,33 +6,41 @@ import {
   faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
-import { Card, ListGroup, Container, Row, Col, Toast } from "react-bootstrap";
+import { Card, ListGroup, Container, Row, Col } from "react-bootstrap";
 import { Button } from "semantic-ui-react";
+import ReactLoading from 'react-loading';
 const axios = require("axios");
-const moment = require("moment");
 
 function Weather() {
   const [weatherState, setWeather] = useState({});
+  const [loading, setLoading] = useState(false);
   const apiKey = process.env.REACT_APP_OPEN_WEATHER_API;
+  const requestWeatherInfo = () => {
+    setLoading(true)
+    console.log("requesting weather info");
+      navigator.geolocation.getCurrentPosition(function (position) {
+        const config = {
+          method: "get",
+          url: `https://api.openweathermap.org/data/2.5/weather?lat=${position?.coords?.latitude}&lon=${position?.coords?.longitude}&units=metric&appid=${apiKey}`,
+          headers: {},
+        };
+        axios(config)
+          .then(function (response) {
+            setLoading(false)
+            setWeather(response.data);
+          })
+          .catch(function (error) {
+            console.log(error)
+          });
+      });
+  }
+
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(function (position) {
-      const config = {
-        method: "get",
-        url: `https://api.openweathermap.org/data/2.5/weather?lat=${position?.coords?.latitude}&lon=${position?.coords?.longitude}&units=metric&appid=${apiKey}`,
-        headers: {},
-      };
-      axios(config)
-        .then(function (response) {
-          setWeather(response.data);
-        })
-        .catch(function (error) {
-          console.log(error)
-        });
-    });
+    requestWeatherInfo()
   }, []);
   return (
     <div>
-      <Card
+      { !loading ? <Card
         bg={"primary"}
         style={{
           width: "18rem",
@@ -50,7 +58,7 @@ function Weather() {
             circular
             icon="refresh"
             onClick={() => {
-              window.location.reload();
+              requestWeatherInfo();
             }}
           />{" "}
         </Card.Header>
@@ -98,7 +106,7 @@ function Weather() {
             </Container>
           </ListGroup.Item>
         </ListGroup>
-      </Card>
+      </Card> :  <ReactLoading type={'bars'} color={'#007bff'} height={667} width={375} />}     
     </div>
   );
 }
